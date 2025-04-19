@@ -5,12 +5,12 @@ const Person = require('./models/person.js')
 
 const app = express()
 
-const opts = { runValidators: true}
+const opts = { runValidators: true }
 
 let persons = []
 
-morgan.token('body', (req, res) => {
-    return JSON.stringify(req.body)
+morgan.token('body', (req) => {
+  return JSON.stringify(req.body)
 })
 
 const errorHandler = (error, request, response, next) => {
@@ -31,8 +31,8 @@ app.use(express.static('dist'))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
 app.get('/', (request, response) => {
-    response.send('<h1>Welcome!</h1>')
-  })
+  response.send('<h1>Welcome!</h1>')
+})
 
 app.get('/info', (request, response) => {
   Person.countDocuments({}).then(count => {
@@ -48,43 +48,38 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-    Person.find({}).then(result => {
-        persons = result
-        response.json(persons)
-    })
-    .catch(error => {
-        console.log(error)
-        response.status(500).end()
-    })
+  Person.find({}).then(result => {
+    persons = result
+    response.json(persons)
   })
-
-
-const generateId = () => {
-    return (Math.floor(Math.random() * 1000000))
-}
+    .catch(error => {
+      console.log(error)
+      response.status(500).end()
+    })
+})
 
 
 app.get('/api/persons/:id', (request, response, next) => {
   Person.findById(request.params.id, opts).then(person => {
     response.json(person)
   })
-  .catch(error => next(error))
+    .catch(error => next(error))
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
   const body = request.body
-  
+
   Person.findById(request.params.id, opts)
     .then(person => {
-        if(!person) {
-            return response.status(404).end()
-        }
-  
-        person.name = body.name
-        person.number = body.number
-        return person.save().then(updatedPerson => {
-            response.json(updatedPerson)
-        })
+      if(!person) {
+        return response.status(404).end()
+      }
+
+      person.name = body.name
+      person.number = body.number
+      return person.save().then(updatedPerson => {
+        response.json(updatedPerson)
+      })
     })
     .catch((error) => next(error))
 })
@@ -93,22 +88,22 @@ app.post('/api/persons', (request, response, next) => {
   const body = request.body
 
   const person = new Person({
-      name: body.name,
-      number: body.number
+    name: body.name,
+    number: body.number
   })
-  
+
   person.save().then(savedPerson => {
-      response.json(savedPerson)
+    response.json(savedPerson)
   })
-  .catch(error => next(error))
+    .catch(error => next(error))
 })
 
 app.delete('/api/persons/:id', (request, response, next) => {
-    Person.findByIdAndDelete(request.params.id)
-        .then(result => {
-            response.status(204).end()
-        })
-        .catch(error => next(error))
+  Person.findByIdAndDelete(request.params.id)
+    .then(() => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
 const unknownEndpoint = (request, response) => {
