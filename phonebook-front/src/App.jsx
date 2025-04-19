@@ -7,7 +7,6 @@ const Notification = ({ message, state }) => {
   if (message === null) {
     return null
   }
-  console.log(state)
   if (state) {
     const messageStyle = { color: 'red', background: 'lightgrey', fontSize: 20, borderStyle: 'solid', borderRadius: 5, padding: 10, marginBottom: 10 }
     return (
@@ -177,8 +176,14 @@ const App = () => {
         }, 5000)
       })
       .catch(error => {
-        console.error('Error adding person:', error)
-        alert('Failed to add person. Please try again.')
+        const errorMessage = {
+          text: error.response.data.error,
+          state: true
+        }
+        setUpdateMessage(errorMessage)
+        setTimeout(() => {
+          setUpdateMessage(baseMessage)
+        }, 5000)
       })
   }
 
