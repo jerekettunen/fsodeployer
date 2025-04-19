@@ -1,38 +1,17 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
-const cors = require('cors')
+const Person = require('./models/person')
+
 const app = express()
 
-let persons = [
-  {
-    id: 1,
-    name: 'Arto Hellas',
-    number: '040-123456'
-  },
-  {
-    id: 2,
-    name: 'Ada Lovelace',
-    number: '39-44-5323523'
-  },
-  {
-    id: 3,
-    name: 'Dan Abramov',
-    number: '12-43-234345'
-  },
-  {
-    id: 4,
-    name: 'Mary Poppendieck',
-    number: '39-23-6423122'
-  }
-]
+let persons = []
 
 morgan.token('body', (req, res) => {
     return JSON.stringify(req.body)
 })
 
 app.use(express.json())
-
-app.use(cors())
 
 app.use(express.static('dist'))
 
@@ -50,7 +29,14 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(result => {
+        persons = result
+        response.json(persons)
+    })
+    .catch(error => {
+        console.log(error)
+        response.status(500).end()
+    })
   })
 
 
@@ -60,15 +46,9 @@ const generateId = () => {
 
 
 app.get('/api/persons/:id', (request, response) => {
-    const id = request.params.id
-    const person = persons.find(p => p.id === Number(id))
-    
-    if(person) {
-        response.json(person)
-    }
-    else {
-        response.status(404).end()
-    }
+    Person.findById(request.params.id).then(person => {
+      response.json(person)
+    })
 })
 
 app.post('/api/persons', (request, response) => {
@@ -85,15 +65,14 @@ app.post('/api/persons', (request, response) => {
         })
     }
 
-    const person = {
-        id: generateId(),
+    const person = new Person({
         name: body.name,
         number: body.number
-    }
-
-    persons = persons.concat(person)
-
-    response.json(person)
+    })
+    
+    person.save().then(savedPerson => {
+        response.json(savedPerson)
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -103,7 +82,13 @@ app.delete('/api/persons/:id', (request, response) => {
     response.status(204).end()
 })
 
-const PORT = 3001
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
+
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
